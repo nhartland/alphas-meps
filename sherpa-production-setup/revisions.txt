@@ -1,0 +1,4 @@
+- Sherpa (beyond_fixed-order_reweighting branch) r28153
+- Rivet (2.4.0 release with bootstrapped versions of HepMC2 and FastJet)
+- BlackHat (0.9.9 pre-release)
+- LHAPDF (6.1.5 release)
