@@ -1,10 +1,12 @@
 #!/usr/bin/python
 import yoda
 import math
+import matplotlib.pyplot as plt
 
+alphas_values = ["115","117", "118", "119", "121"]
 experiments = 	["CMS_2011_S8950903"]
 theory = "NLOPS-S-emission"
-dPhi_cut = 2.3
+dPhi_cut = 2.8
 
 ####################################
 
@@ -24,9 +26,7 @@ def parseScatter2D(ao, dPoints, dErrors):
 
 ####################################
 
-for exp in experiments:
-	print("Analysing " + exp)
-
+def computeChi2(exp, alphas):
 	# Read experimental data and systematics
 	dataPaths  = []
 	dataPoints = []
@@ -38,7 +38,7 @@ for exp in experiments:
 
 	theoryPoints = []
 	theoryErrors = []
-	aos = yoda.read(theory_path +theory+'/'+exp +'_0115_MC.yoda')
+	aos = yoda.read(theory_path +theory+'/'+exp +'_0'+alphas+'_MC.yoda')
 	for path in dataPaths:
 		hs = [h for h in aos.values() if path in h.path]
 		if len(hs) != 1:
@@ -49,9 +49,21 @@ for exp in experiments:
 	chi2=0
 	for i in xrange(0,len(dataPoints)):
 		chi2 += pow(dataPoints[i] - theoryPoints[i],2)/(pow(dataErrors[i],2) + pow(theoryErrors[i],2))
-	print(chi2/len(dataPoints))
-                #         # Add cutflow
-                #         cutflow = []
-                #         for bin in ao.bins:
-                #                 cutflow.append(bin.sumW)
-                #         cutflows[folder+regime] = cutflow
+	return chi2/len(dataPoints)
+
+####################################
+print("Cut: DeltaPhi > " +str(dPhi_cut))
+for exp in experiments:
+	print("Analysing " + exp)
+	chi2vals = []
+	for a_s in alphas_values:
+		chi2vals.append(computeChi2(exp, a_s))
+		print(a_s + " : " + str(chi2vals[-1]))
+
+	chi2fig, chi2ax = plt.subplots()
+	chi2ax.set_ylabel("chi2")
+	chi2ax.set_xlabel("alpha_S")
+	chi2ax.xaxis.grid(True)
+	chi2ax.yaxis.grid(True)
+	chi2ax.plot(alphas_values, chi2vals, label = exp)
+	chi2fig.savefig('chi2.pdf')
