@@ -70,6 +70,7 @@ def parse_seed_argument(arg):
 def parse_tag_values_argument(arg):
     tag_values = arg.split(',')
     print "Will look for the following tag values:", tag_values, "..."
+    return tag_values
 
 
 def parse_event_count_argument(arg):

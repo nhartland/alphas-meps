@@ -12,53 +12,87 @@ Merged YODA files will be written to the passed directory.
 
 import os
 import sys
-import subprocess
 import re
-
+import argparse
 import numpy as np
+
+# prevent cluttering our setup directory with pyc files
+sys.dont_write_bytecode = True
+
+import submitprocess
 
 
 def main():
     """Entry point if this file is executed as a script."""
-    root_dir = sys.argv[1]
-    if len(sys.argv) > 2:
-        prompted_tag_values = set(sys.argv[2].split(','))
+    # define CLI
+    parser = argparse.ArgumentParser()
+    parser.add_argument("target_path", default=".")
+    parser.add_argument("-p", "--sampling-parameter", default=None)
+    parser.add_argument("-c", "--run-command", default='run_local')
+    parser.add_argument("-n", "--max-seed-number", default=0, type=int)
+    parser.add_argument("-b", "--directory-basename", default='Seed')
+    args = parser.parse_args()
+
+    # post-process command line arguments
+    if args.sampling_parameter is not None:
+        prompted_tag_values = set(args.sampling_parameter.split(','))
     else:
         prompted_tag_values = None
+    run_command = getattr(submitprocess, args.run_command)
 
-    # get very first subdir, this might be of the form "Seed.n" or "Seed.n-m"
+    # get some random subdir, this might be of the form "Seed.n" or "Seed.n-m"
     # (where m might even be -1)
-    first_seed_subdir = get_immediate_subdirectories(root_dir)[0]
+    regex_prefix = '^{}.'.format(args.directory_basename)
+    first_seed_subdir = get_immediate_subdirectories(args.target_path, regex=regex_prefix)[0]
     first_seed = first_seed_subdir.split('-')[0].split('.')[-1]
 
-    # get values for m that have been used
-    first_seed_subdirs = get_immediate_subdirectories(root_dir, regex='^Seed.' + first_seed + '(-[-0-9]+)?$')
-    print first_seed_subdirs
+    # get values for m that have been used and filter those if we an explicit request
+    first_seed_subdirs = get_immediate_subdirectories(args.target_path, regex=regex_prefix + first_seed + '(-[-0-9]+)?$')
     tag_values = set([''.join(subdir.split('-', 1)[1:]) for subdir in first_seed_subdirs])
     if prompted_tag_values is not None:
         tag_values = tag_values & prompted_tag_values  # use union of sets
 
+    # merge entries within directories that share the same tag
     for tag_value in tag_values:
+        # collect directories
         suffix = '' if tag_value == '' else '-' + tag_value
-        tag_value_subdirs = get_immediate_subdirectories(root_dir, regex='^Seed.\d+' + suffix + '$')
-        combine_files(root_dir, tag_value_subdirs, suffix, 'yoda', combine_yodas)
-        combine_files(root_dir, tag_value_subdirs, suffix, 'dat', combine_dats)
+        tag_value_subdirs = get_immediate_subdirectories(args.target_path, regex=regex_prefix + '\d+' + suffix + '$')
+        # process all directories at once if not otherwise specified, otherwise do subsamples
+        max_seed_number = len(tag_value_subdirs) if args.max_seed_number <= 1 else args.max_seed_number 
+        if len(tag_value_subdirs) % args.max_seed_number != 0:
+            raise Exception("Number of seeds not a multiple of {}".format(args.max_seed_number))
+        # merge each subsample
+        number_of_subsamples = len(tag_value_subdirs) / args.max_seed_number
+        for subsample in xrange(number_of_subsamples):
+            tag_value_subdirs_sample = tag_value_subdirs[subsample * args.max_seed_number:(subsample + 1) * args.max_seed_number]
+            targetdir = "Combined.{}{}".format(subsample + 1, suffix) if number_of_subsamples > 1 else None
+            suffix = '' if number_of_subsamples > 1 else suffix
+            combine_files(args.target_path, tag_value_subdirs_sample, '', 'yoda', combine_yodas, run_command, targetdir)
+            combine_files(args.target_path, tag_value_subdirs_sample, '', 'dat', combine_dats, run_command, targetdir)
 
 
-def combine_files(rootdir, subdirs, suffix, extension, combiner):
+def combine_files(rootdir, subdirs, suffix, extension, combiner, run_command, targetdir=None):
+    if targetdir is not None:
+        targetdir = os.path.join(rootdir, targetdir)
+        try:
+            os.mkdir(targetdir)
+        except OSError:
+            pass
+    else:
+        targetdir = rootdir
     for file_name in get_files(subdirs[0], extension):
         input_paths = [os.path.join(subdir, file_name) for subdir in subdirs]
-        output_path = os.path.join(rootdir, os.path.splitext(file_name)[0]
+        output_path = os.path.join(targetdir, os.path.splitext(file_name)[0]
                                    + suffix + os.path.splitext(file_name)[1])
-        combiner(input_paths, output_path)
+        combiner(input_paths, output_path, run_command)
 
 
-def combine_yodas(input_paths, output_path):
+def combine_yodas(input_paths, output_path, run_command):
     command_parts = ['yodamerge', '-o', output_path] + input_paths
-    subprocess.call(command_parts)
+    run_command(command_parts, resources={'walltime': 10, 'mem': 1}, name="yodamerge")
 
 
-def combine_dats(input_paths, output_path):
+def combine_dats(input_paths, output_path, run_command):
     combined = None
     ycols = None
     header = None
