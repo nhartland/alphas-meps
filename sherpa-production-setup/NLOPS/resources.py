@@ -7,4 +7,3 @@ resources['single']      = {'walltime': 60,   'mem': 2}
 # resources['integration'] = {'walltime': 60,   'mem': 2, 'nodes': 64}
 resources['integration'] = {'walltime': 60,   'mem': 2}
 resources['reweighting'] = {'walltime': 60,   'mem': 2}
-

@@ -15,6 +15,7 @@
   % ME generation
   LOOPGEN:=BlackHat;
   ME_SIGNAL_GENERATOR Amegic Comix LOOPGEN;
+
   EVENT_GENERATION_MODE Weighted;
   J1CUT:=65.; J2CUT:=15.;
   RESULT_DIRECTORY antikt_30_05_res_jJ1CUT_jJ2CUT_ff1._rf1._qfQSF;

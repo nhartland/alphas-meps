@@ -3,20 +3,19 @@
   EVENTS 10k;
   #EVENTS 250k;
 
+  % parton-level
   MI_HANDLER=None
   FRAGMENTATION=Off
 
-  % tags and settings for scale definitions
+  % scale definitions
   FSF:=1.; RSF:=1.; QSF:=1.;
   SCALES FASTJET[A:antikt,PT:30,ET:0,R:0.5,M:0]{FSF*0.0625*H_T2}{RSF*0.0625*H_T2}{QSF*0.25*PPerp2(p[3])}
 
-  % tags and settings for ME-level cuts
-  J1CUT:=65.; J2CUT:=15.;
-
-  % tags and settings for ME generators
+  % ME generation
   LOOPGEN:=BlackHat;
   ME_SIGNAL_GENERATOR Amegic LOOPGEN;
   EVENT_GENERATION_MODE Weighted;
+  J1CUT:=65.; J2CUT:=15.;
   #RESULT_DIRECTORY res_jJ1CUT_jJ2CUT_ffFSF_rfRSF_qfQSF;
   RESULT_DIRECTORY antikt_30_05_res_jJ1CUT_jJ2CUT_ff1._rf1._qfQSF;
 
@@ -32,10 +31,12 @@
   # all alphas variations, but keep PDF nominal always
   #PDF_VARIATIONS NNPDF30_nlo_as_0115/0 NNPDF30_nlo_as_0121/0
 
-  % model parameters
-  MODEL SM;
+  % reweighting
+  NREW:=-1
+  CSS_REWEIGHT_MAXEM NREW
+  SCALE_VARIATIONS 1.,1.,NNPDF30_nlo_as_0118[all] 1.,1.,NNPDF30_nlo_as_0115[all] 1.,1.,NNPDF30_nlo_as_0121[all] 1.,1.,NNPDF30_nlo_as_0117/0 1.,1.,NNPDF30_nlo_as_0119/0
 
-  % collider setup
+  % beam setup
   BEAM_1  2212; BEAM_ENERGY_1 3500.0;
   BEAM_2  2212; BEAM_ENERGY_2 3500.0;
 
