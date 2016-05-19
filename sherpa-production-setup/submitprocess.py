@@ -90,9 +90,8 @@ def run_rocks(sherpa_command_parts, resources, name='sherpa'):
     # build complete command line and submit
     command = '{0} | {1}'.format(' '.join(command_parts), ' '.join(qsub_command_parts))
     print name, ':', command
-    # subprocess.call(command, shell=True)  # enable shell parsing such that the pipe works
+    subprocess.call(command, shell=True)  # enable shell parsing such that the pipe works
     # this will return immediately, make sure integration results are available before production
-
 
 def run_scc(sherpa_command_parts, resources, name='sherpa'):
     """Asynchronously run command at the LSF of the Goettingen Scientific Compute Cluster.
@@ -140,8 +139,14 @@ def run_scc(sherpa_command_parts, resources, name='sherpa'):
         bsub_command_parts.append("mpirun.lsf")
 
     # build complete command line and submit
-    command = ' '.join(bsub_command_parts + sherpa_command_parts)
+    command = ' '.join(bsub_command_parts)
+    command += ' '
+    if not use_mpi:
+        command += "'"
+    command += ' '.join(sherpa_command_parts)
+    if not use_mpi:
+        command += "'"
     print name, ':', command
-    # subprocess.call(command, shell=True)  # enable shell parsing such that the pipe works
+    subprocess.call(command, shell=True)  # enable shell parsing such that the pipe works
     # this will return immediately, make sure integration results are available before production
 

@@ -95,7 +95,16 @@ def process_run_card(run_card, run_command, args):
     if args.mode in ('all', 'integration'):
         # integrate
         name = basename_for_run_card(run_card) + '-prep'
-        run_command(sherpa_command + ['-e0'] + ['; ./makelibs &&'] + sherpa_command + ['-e0'],
+        use_mpi = False
+        try:
+            if resources['integration']['nodes'] > 1:
+                use_mpi = True
+        except KeyError:
+            pass
+        command = sherpa_command + ['-e0']
+        if not use_mpi:
+            command += ['; ./makelibs &&'] + sherpa_command + ['-e0']
+        run_command(command,
                     resources['integration'], name=name)
 
     if args.mode in ('all', 'production'):
