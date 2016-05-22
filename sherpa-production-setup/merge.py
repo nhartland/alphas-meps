@@ -55,20 +55,20 @@ def main():
     # merge entries within directories that share the same tag
     for tag_value in tag_values:
         # collect directories
-        suffix = '' if tag_value == '' else '-' + tag_value
-        tag_value_subdirs = get_immediate_subdirectories(args.target_path, regex=regex_prefix + '\d+' + suffix + '$')
+        dir_suffix = '' if tag_value == '' else '-' + tag_value
+        tag_value_subdirs = get_immediate_subdirectories(args.target_path, regex=regex_prefix + '\d+' + dir_suffix + '$')
         # process all directories at once if not otherwise specified, otherwise do subsamples
         max_seed_number = len(tag_value_subdirs) if args.max_seed_number <= 1 else args.max_seed_number 
-        if len(tag_value_subdirs) % args.max_seed_number != 0:
-            raise Exception("Number of seeds not a multiple of {}".format(args.max_seed_number))
+        if len(tag_value_subdirs) % max_seed_number != 0:
+            raise Exception("Number of seeds not a multiple of {}".format(max_seed_number))
         # merge each subsample
-        number_of_subsamples = len(tag_value_subdirs) / args.max_seed_number
+        number_of_subsamples = len(tag_value_subdirs) / max_seed_number
         for subsample in xrange(number_of_subsamples):
-            tag_value_subdirs_sample = tag_value_subdirs[subsample * args.max_seed_number:(subsample + 1) * args.max_seed_number]
-            targetdir = "Combined.{}{}".format(subsample + 1, suffix) if number_of_subsamples > 1 else None
-            suffix = '' if number_of_subsamples > 1 else suffix
-            combine_files(args.target_path, tag_value_subdirs_sample, '', 'yoda', combine_yodas, run_command, targetdir)
-            combine_files(args.target_path, tag_value_subdirs_sample, '', 'dat', combine_dats, run_command, targetdir)
+            tag_value_subdirs_sample = tag_value_subdirs[subsample * max_seed_number:(subsample + 1) * max_seed_number]
+            targetdir = "Combined.{}{}".format(subsample + 1, dir_suffix) if number_of_subsamples > 1 else None
+            file_suffix = '' if number_of_subsamples > 1 else dir_suffix
+            combine_files(args.target_path, tag_value_subdirs_sample, file_suffix, 'yoda', combine_yodas, run_command, targetdir)
+            combine_files(args.target_path, tag_value_subdirs_sample, file_suffix, 'dat', combine_dats, run_command, targetdir)
 
 
 def combine_files(rootdir, subdirs, suffix, extension, combiner, run_command, targetdir=None):
